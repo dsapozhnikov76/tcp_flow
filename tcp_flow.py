@@ -39,7 +39,7 @@ raw_data = []
 
 STREAMS = dict()
 
-for p in pcap:
+for p_id, p in enumerate(pcap, start=1):
     ts, packet = p
     eth = pyeth.Ethernet(packet)
     ip = pyip.IP(eth.body_bytes)
@@ -49,7 +49,7 @@ for p in pcap:
         hash_dst = hash(ip.dst_s) + hash(tcp.dport)
         hashsum = hash_src + hash_dst
         flags = get_flags(tcp.flags)
-        a = [ip.src_s, tcp.sport, ip.dst_s, tcp.dport, tcp.seq, tcp.flags, flags, len(tcp.body_bytes)]
+        a = [ip.src_s, tcp.sport, ip.dst_s, tcp.dport, tcp.seq, tcp.flags, flags, len(tcp.body_bytes), p_id]
         if hashsum in STREAMS:
             if hash_src in STREAMS[hashsum]:
                 STREAMS[hashsum][hash_src].append(a)
@@ -59,10 +59,9 @@ for p in pcap:
             STREAMS[hashsum] = dict()
             STREAMS[hashsum][hash_src] = [a]
 
-stream_id = 0
-for stream in STREAMS.keys():
-    side_id = 0
-    for side in STREAMS[stream].keys():
+
+for stream_id, stream in enumerate(STREAMS.keys()):
+    for side_id, side in enumerate(STREAMS[stream].keys()):
         side_flags = []
         side_seq = STREAMS[stream][side][0][4]
         for pack in range(len(STREAMS[stream][side])):
@@ -71,10 +70,9 @@ for stream in STREAMS.keys():
             cur_seq = STREAMS[stream][side][pack][4]
             if side_seq > cur_seq:
                 continue
-            if side_seq != cur_seq:
-                print('Seq: ', cur_seq, ' - Hole!')
+            if side_seq < cur_seq:
+                print('Seq: ', side_seq, ' Frame: ', STREAMS[stream][side][pack][8], ' - Hole!')
                 side_seq = cur_seq
-                continue
             side_seq += STREAMS[stream][side][pack][7]
             if (STREAMS[stream][side][pack][5] == 2) or (STREAMS[stream][side][pack][5] == 18):
                 side_seq += 1
@@ -83,8 +81,6 @@ for stream in STREAMS.keys():
                 side_seq += 1
         print('Stream: ', stream_id, ' side ', side_id, end='')
         print(' Uniq flags: ', list(dict.fromkeys(side_flags)))
-        side_id += 1
-    stream_id += 1
 
 
 print("Current: %d, Peak %d" % tracemalloc.get_traced_memory())
