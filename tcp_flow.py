@@ -64,8 +64,23 @@ for stream in STREAMS.keys():
     side_id = 0
     for side in STREAMS[stream].keys():
         side_flags = []
+        side_seq = STREAMS[stream][side][0][4]
         for pack in range(len(STREAMS[stream][side])):
-            side_flags.extend(STREAMS[stream][side][pack][6])
+            pack_flags = STREAMS[stream][side][pack][6]
+            side_flags.extend(pack_flags)
+            cur_seq = STREAMS[stream][side][pack][4]
+            if side_seq > cur_seq:
+                continue
+            if side_seq != cur_seq:
+                print('Seq: ', cur_seq, ' - Hole!')
+                side_seq = cur_seq
+                continue
+            side_seq += STREAMS[stream][side][pack][7]
+            if (STREAMS[stream][side][pack][5] == 2) or (STREAMS[stream][side][pack][5] == 18):
+                side_seq += 1
+            if (STREAMS[stream][side][pack][5] == 1) or (STREAMS[stream][side][pack][5] == 17) or \
+                    (STREAMS[stream][side][pack][5] == 25):
+                side_seq += 1
         print('Stream: ', stream_id, ' side ', side_id, end='')
         print(' Uniq flags: ', list(dict.fromkeys(side_flags)))
         side_id += 1
