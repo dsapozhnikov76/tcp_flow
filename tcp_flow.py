@@ -32,6 +32,7 @@ def get_flags(l_flags):
                                    ]))
 
 
+start_time = time.clock()
 tracemalloc.start()
 
 pcap = ppcap.Reader(pcap_file)
@@ -59,7 +60,6 @@ for p_id, p in enumerate(pcap, start=1):
             STREAMS[hashsum] = dict()
             STREAMS[hashsum][hash_src] = [a]
 
-
 for stream_id, stream in enumerate(STREAMS.keys()):
     for side_id, side in enumerate(STREAMS[stream].keys()):
         side_flags = []
@@ -71,7 +71,7 @@ for stream_id, stream in enumerate(STREAMS.keys()):
             if side_seq > cur_seq:
                 continue
             if side_seq < cur_seq:
-                print('Seq: ', side_seq, ' Frame: ', STREAMS[stream][side][pack][8], ' - Hole!')
+                print('hole Seq(raw): ', side_seq, ' - ', cur_seq, ' (frame: ', STREAMS[stream][side][pack][8], ')')
                 side_seq = cur_seq
             side_seq += STREAMS[stream][side][pack][7]
             if (STREAMS[stream][side][pack][5] == 2) or (STREAMS[stream][side][pack][5] == 18):
@@ -82,5 +82,5 @@ for stream_id, stream in enumerate(STREAMS.keys()):
         print('Stream: ', stream_id, ' side ', side_id, end='')
         print(' Uniq flags: ', list(dict.fromkeys(side_flags)))
 
-
 print("Current: %d, Peak %d" % tracemalloc.get_traced_memory())
+print("--- %s seconds ---" % (time.clock() - start_time))
