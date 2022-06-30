@@ -11,28 +11,12 @@ pcap_file = sys.argv[1]
 
 
 def get_flags(l_flags):
-    urg = l_flags & 0x020
-    urg >>= 5
-    ack = l_flags & 0x010
-    ack >>= 4
-    psh = l_flags & 0x008
-    psh >>= 3
-    rst = l_flags & 0x004
-    rst >>= 2
-    syn = l_flags & 0x002
-    syn >>= 1
-    fin = l_flags & 0x001
-    fin >>= 0
-    return list(filter(''.__ne__, ['URG' if urg else '',
-                                   'ACK' if ack else '',
-                                   'PSH' if psh else '',
-                                   'RST' if rst else '',
-                                   'SYN' if syn else '',
-                                   'FIN' if fin else ''
-                                   ]))
+    dflags = {1: 'FIN', 2: 'SYN', 4: 'RST', 8: 'PSH', 16: 'ACK', 32: 'URG'}
+
+    return [list(dict.values(dflags))[i] for i, f in enumerate(dflags) if ((l_flags & f) >> i) == 1]
 
 
-start_time = time.clock()
+start_time = time.perf_counter()
 tracemalloc.start()
 
 pcap = ppcap.Reader(pcap_file)
@@ -83,4 +67,4 @@ for stream_id, stream in enumerate(STREAMS.keys()):
         print(' Uniq flags: ', list(dict.fromkeys(side_flags)))
 
 print("Current: %d, Peak %d" % tracemalloc.get_traced_memory())
-print("--- %s seconds ---" % (time.clock() - start_time))
+print("--- %s seconds ---" % (time.perf_counter() - start_time))
